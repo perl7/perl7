@@ -1,6 +1,6 @@
 # Perl 7
 
-The up-to-date Perl.
+![](https://avatars2.githubusercontent.com/u/25326498?v=3&s=200) The up-to-date Perl.
 
 ## FUNCTIONS
 
