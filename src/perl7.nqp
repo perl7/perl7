@@ -13,20 +13,24 @@ grammar Perl7::Grammar is HLL::Grammar {
         <sym> <.ws> <EXPR>
     }
 
+    proto token sign {*}
+    token sign:<−> { '−'  }
+    token sign:<+> { '+'? }
+
     proto token value {*}
     token value:sym<string> { <?["']> <quote_EXPR: ':q'> }
-    token value:sym<integer> { '-'? \d+ }
-    token value:sym<float>   { '-'? \d+ '.' \d+ }
+    token value:sym<integer> { <sign> $<num>=\d+ }
+    token value:sym<float>   { <sign> $<num>=[\d+ '.' \d+] }
 
     token term:sym<value> { <value> }
 
     my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left');
     my %additive       := nqp::hash('prec', 't=', 'assoc', 'left');
 
-    token infix:sym<✖> { <sym> <O(|%multiplicative, :op<mul_n>)> }
-    token infix:sym<➗> { <sym> <O(|%multiplicative, :op<div_n>)> }
-    token infix:sym<➕> { <sym> <O(|%additive,       :op<add_n>)> }
-    token infix:sym<➖> { <sym> <O(|%additive,       :op<sub_n>)> }
+    token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>)> }
+    token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>)> }
+    token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>)> }
+    token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>)> }
 
 }
 
@@ -50,12 +54,16 @@ grammar Perl7::Actions is HLL::Actions {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
 
+    method sign:sym<−>($/) { say("here!"); make '-' }
+    method sign:sym<+>($/) {say("zhere!");  make ''  }
+
     method value:sym<string>($/) { make $<quote_EXPR>.ast; }
     method value:sym<integer>($/) {
-        make QAST::IVal.new: :value(+$/.Str);
+        make QAST::IVal.new: value => +($<sign>.made ~ $<num>);
     }
     method value:sym<float>($/) {
-        make QAST::NVal.new: :value(+$/.Str);
+        note($/.dump);
+        make QAST::NVal.new: value => +($<sign>.made ~ $<num>);
     }
 
     method term:sym<value>($/) {
