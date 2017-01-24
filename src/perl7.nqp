@@ -14,8 +14,8 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
 
     proto token sign {*}
-    token sign:<−> { '−'  }
-    token sign:<+> { '+'? }
+    token sign:sym<−> { '−'  }
+    token sign:sym<+> { '+'? }
 
     proto token value {*}
     token value:sym<string> { <?["']> <quote_EXPR: ':q'> }
@@ -54,15 +54,14 @@ grammar Perl7::Actions is HLL::Actions {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
 
-    method sign:sym<−>($/) { say("here!"); make '-' }
-    method sign:sym<+>($/) {say("zhere!");  make ''  }
+    method sign:sym<−>($/) { make '-' }
+    method sign:sym<+>($/) { make ''  }
 
     method value:sym<string>($/) { make $<quote_EXPR>.ast; }
     method value:sym<integer>($/) {
         make QAST::IVal.new: value => +($<sign>.made ~ $<num>);
     }
     method value:sym<float>($/) {
-        note($/.dump);
         make QAST::NVal.new: value => +($<sign>.made ~ $<num>);
     }
 
