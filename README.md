@@ -4,7 +4,7 @@
 
 ## FUNCTIONS
 
-### `💬`
+### `💬` `U+1F4AC`
 
 ```
     💬 'Hello, World!'
