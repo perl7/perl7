@@ -9,6 +9,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     rule statementlist { [ <statement> "\n"+ ]* }
 
     proto token statement {*}
+    token statement:sym<EXPR> { <EXPR> }
     token statement:sym<💬> {
         <sym> <.ws> <EXPR>
     }
@@ -24,13 +25,15 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     token term:sym<value> { <value> }
 
-    my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left');
-    my %additive       := nqp::hash('prec', 't=', 'assoc', 'left');
+    my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left' );
+    my %additive       := nqp::hash('prec', 't=', 'assoc', 'left' );
+    my %assignment     := nqp::hash('prec', 'j=', 'assoc', 'right');
 
     token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>)> }
     token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>)> }
     token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>)> }
     token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>)> }
+    token infix:sym<=> { <sym> <O(|%assignment,     :op<bind> )> }
 
 }
 
@@ -50,6 +53,7 @@ grammar Perl7::Actions is HLL::Actions {
         make $stmts;
     }
 
+    method statement:sym<EXPR>($/) { make $<EXPR>.ast; }
     method statement:sym<💬>($/) {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
@@ -68,6 +72,8 @@ grammar Perl7::Actions is HLL::Actions {
     method term:sym<value>($/) {
         make $<value>.ast;
     }
+
+    method term:sym<
 }
 
 grammar Perl7::Compiler is HLL::Compiler {
