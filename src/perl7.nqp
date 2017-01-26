@@ -14,9 +14,8 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     proto token statement {*}
     token statement:sym<EXPR> { <EXPR> }
-    token statement:sym<💬> {
-        <sym> <.ws> <EXPR>
-    }
+    token statement:sym<💬> { <sym> <.ws> <EXPR> }
+    token statement:sym<fuc> { <sym> }
 
     proto token sign {*}
     token sign:sym<−> { '−'  }

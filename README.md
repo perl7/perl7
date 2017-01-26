@@ -38,6 +38,19 @@ The currently supported operators are:
 - `−` `U+2212` Subtract
 - `+` `U+002B` Add
 
+## USER DECLARED FUNCTIONS
+
+Functions in Perl 7 are trivial to declare and need no ugly braces or anything
+like that. They're started with word `fuc` (pronounced "f-yoo-k") followed by
+space and the function's name, followed by function's body, followed by word
+`ton`. Mnemonic: **fu**n**c**-**t**i**on**
+
+```
+fuc greet
+    💬 hi
+ton
+```
+
 ### LICENSE
 
 See [LICENSE](LICENSE) file for details.
