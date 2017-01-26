@@ -27,7 +27,7 @@ need any declarators and are simply declared on first use:
 
 ## OPERATORS
 
-B<Note:> Perl 7 fully embraces the entire Unicode range and so traditional
+**Note:** Perl 7 fully embraces the entire Unicode range and so traditional
 symbols that are mis-used in other languages (e.g. `*` for multiplication) are
 no longer valid.
 
