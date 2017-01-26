@@ -3,7 +3,11 @@
 use NQPHLL;
 
 grammar Perl7::Grammar is HLL::Grammar {
-    token TOP { <statementlist> }
+    token TOP {
+        :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
+        <statementlist>
+        [ $ || <.panic('Syntax error')> ]
+    }
     token ws { <!ww> \h* || \h+ }
 
     rule statementlist { [ <statement> "\n"+ ]* }
@@ -24,6 +28,11 @@ grammar Perl7::Grammar is HLL::Grammar {
     token value:sym<float>   { <sign> $<num>=[\d+ '.' \d+] }
 
     token term:sym<value> { <value> }
+    token term:sym<ident> {
+        :my $*MAYBE_DECL := 0;
+        <ident>
+        [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
+    }
 
     my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left' );
     my %additive       := nqp::hash('prec', 't=', 'assoc', 'left' );
@@ -39,10 +48,10 @@ grammar Perl7::Grammar is HLL::Grammar {
 
 grammar Perl7::Actions is HLL::Actions {
     method TOP($/) {
-        make QAST::Block.new(
-            QAST::Var.new(:name<@*ARGS>, :scope<local>, :decl<param>),
-            $<statementlist>.ast,
-        );
+        $*CUR_BLOCK[0].push:
+            QAST::Var.new(:name<@*ARGS>, :scope<local>, :decl<param>);
+        $*CUR_BLOCK.push: $<statementlist>.ast;
+        make $*CUR_BLOCK;
     }
 
     method statementlist($/) {
@@ -69,11 +78,17 @@ grammar Perl7::Actions is HLL::Actions {
         make QAST::NVal.new: value => +($<sign>.made ~ $<num>);
     }
 
-    method term:sym<value>($/) {
-        make $<value>.ast;
+    method term:sym<value>($/) { make $<value>.ast; }
+    method term:sym<ident>($/) {
+        my $name := ~$<ident>;
+        my %sym := $*CUR_BLOCK.symbol($name);
+        if $*MAYBE_DECL && !%sym<declared> {
+            $*CUR_BLOCK.symbol($name, :declared);
+            make QAST::Var.new(:$name, :scope<lexical>, :decl<var>);
+        } else {
+            make QAST::Var.new(:$name, :scope<lexical> )
+        }
     }
-
-    method term:sym<
 }
 
 grammar Perl7::Compiler is HLL::Compiler {
