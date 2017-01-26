@@ -14,8 +14,18 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     proto token statement {*}
     token statement:sym<EXPR> { <EXPR> }
-    token statement:sym<💬> { <sym> <.ws> <EXPR> }
-    token statement:sym<fuc> { <sym> }
+    token statement:sym<💬> {
+        <sym> <.ws> <EXPR>
+    }
+    token statement:sym<fuc> {
+        <sym> \h+ <fucbody>
+    }
+    rule fucbody {
+        :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
+            <ident> \n
+            <statementlist>
+        'ton'
+    }
 
     proto token sign {*}
     token sign:sym<−> { '−'  }
@@ -31,6 +41,10 @@ grammar Perl7::Grammar is HLL::Grammar {
         :my $*MAYBE_DECL := 0;
         <ident>
         [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
+    }
+    token term:sym<call> {
+        <!keyword>
+        <ident> '[' ']'
     }
 
     my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left' );
@@ -65,6 +79,24 @@ grammar Perl7::Actions is HLL::Actions {
     method statement:sym<💬>($/) {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
+    method statement:sym<fuc>($/) {
+        my $install := $<fucbody>.ast;
+        $*CUR_BLOCK[0].push(
+            QAST::OP.new(
+                :op<bind>,
+                QAST::Var.new(
+                    :name($install.name), :scope<lexical>, :decl<var>
+                ),
+                $install,
+            )
+        );
+        make QAST::OP.new(:op<null>);
+    }
+    method fucbody($/) {
+        $*CUR_BLOCK.name(~$<ident>);
+        $*CUR_BLOCK.push($<statementlist>.ast);
+        make $*CUR_BLOCK;
+    }
 
     method sign:sym<−>($/) { make '-' }
     method sign:sym<+>($/) { make ''  }
@@ -87,6 +119,9 @@ grammar Perl7::Actions is HLL::Actions {
         } else {
             make QAST::Var.new(:$name, :scope<lexical> )
         }
+    }
+    method term:sym<call>($/) {
+        make QAST::Op.new( :op<call>, :name(~$<ident>) );
     }
 }
 
