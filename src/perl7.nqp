@@ -15,10 +15,10 @@ grammar Perl7::Grammar is HLL::Grammar {
     proto token statement {*}
     token statement:sym<EXPR> { <EXPR> }
     token statement:sym<💬> {
-        <sym> <.ws> <EXPR>
+        <.ws> <sym> <.ws> <EXPR>
     }
     token statement:sym<fuc> {
-        <sym> \h+ <fucbody>
+        'fuc' \h+ <fucbody>
     }
     rule fucbody {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
@@ -45,6 +45,11 @@ grammar Perl7::Grammar is HLL::Grammar {
     token term:sym<call> {
         <!keyword>
         <ident> '[' ']'
+    }
+
+    token keyword {
+        [ fuc | ton ]
+        <!ww>
     }
 
     my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left' );
