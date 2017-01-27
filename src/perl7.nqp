@@ -17,14 +17,14 @@ grammar Perl7::Grammar is HLL::Grammar {
     token statement:sym<💬> { # U+1F4AC
         <sym> <.ws> <EXPR>
     }
-    token statement:sym<fuc> {
-        'fuc' \h+ <fucbody>
+    token statement:sym<fun> {
+        'fun' \h+ <funbody>
     }
-    rule fucbody {
+    rule funbody {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
         <ident> <signature>? \n
         <statementlist>
-        'ton'
+        'ion'
     }
     rule signature {
         '[' <param>* % [ ',' ] ']'
@@ -53,7 +53,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     token term:sym<value> { <value> }
 
     token keyword {
-        [ fuc | ton ]
+        [ 'fun' | 'ion' ]
         <!ww>
     }
 
@@ -88,8 +88,8 @@ grammar Perl7::Actions is HLL::Actions {
     method statement:sym<💬>($/) {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
-    method statement:sym<fuc>($/) {
-        my $install := $<fucbody>.ast;
+    method statement:sym<fun>($/) {
+        my $install := $<funbody>.ast;
         $*CUR_BLOCK.symbol($install.name, :declared);
         $*CUR_BLOCK[0].push(
             QAST::Op.new(
@@ -102,7 +102,7 @@ grammar Perl7::Actions is HLL::Actions {
         );
         make QAST::Op.new(:op<null>);
     }
-    method fucbody($/) {
+    method funbody($/) {
         $*CUR_BLOCK.name("&$<ident>");
         $*CUR_BLOCK.push($<statementlist>.ast);
         make $*CUR_BLOCK;
