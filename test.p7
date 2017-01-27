@@ -1,4 +1,4 @@
-fun meow
-    💬 'Hi'
+fun calc-it[a, b, c]
+    💬 a + b + c
 ion
-meow
+calc-it[10, 20, 12]

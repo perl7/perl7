@@ -57,6 +57,15 @@ To call the function later, simply write its name:
 greet  # prints "hi"
 ```
 
+You can specify parameters with square brackets:
+
+```
+fun calc-it[a, b, c]
+    💬 a + b + c
+ion
+calc-it[10, 20, 12] # prints 42
+```
+
 ### LICENSE
 
 See [LICENSE](LICENSE) file for details.
