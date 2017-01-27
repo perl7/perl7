@@ -124,10 +124,10 @@ grammar Perl7::Actions is HLL::Actions {
         my $name := ~$<ident>;
         my %sym := $*CUR_BLOCK.symbol($name);
         if $*MAYBE_DECL && !%sym<declared> {
-            $*CUR_BLOCK.symbol($name, :declared);
-            make QAST::Var.new(:$name, :scope<lexical>, :decl<var>);
+            $*CUR_BLOCK.symbol: $name, :declared;
+            make QAST::Var.new: :$name, :scope<lexical>, :decl<var>;
         } else {
-            make QAST::Var.new(:$name, :scope<lexical> )
+            make QAST::Var.new: :$name, :scope<lexical>;
         }
     }
     method term:sym<call>($/) {
