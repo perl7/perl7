@@ -4,11 +4,7 @@ use NQPHLL;
 
 grammar Perl7::Grammar is HLL::Grammar {
     token TOP {
-        :my $*CUR_BLOCK := QAST::Block.new(
-            QAST::Stmts.new(
-                QAST::Var.new(:name<@*ARGS>, :scope<lexical>, :decl<param>)
-            )
-        );
+        :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
         <statementlist>
         [ $ || <.panic('Syntax error')> ]
     }
@@ -26,10 +22,14 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
     rule fucbody {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
-            <ident> \n
+            <ident> <signature>? \n
             <statementlist>
         'ton'
     }
+    rule signature {
+        '(' <param>* % [ ',' ] ')'
+    }
+    token param { <ident> }
 
     proto token sign {*}
     token sign:sym<−> { '−'  }
@@ -40,7 +40,6 @@ grammar Perl7::Grammar is HLL::Grammar {
     token value:sym<integer> { <sign> $<num>=\d+ }
     token value:sym<float>   { <sign> $<num>=[\d+ '.' \d+] }
 
-    token term:sym<value> { <value> }
     token term:sym<ident> {
         :my $*MAYBE_DECL := 0;
         <!keyword>
@@ -49,8 +48,9 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
     token term:sym<call> {
         <!keyword>
-        <ident> '[' ']'
+        <ident> '(' ')'
     }
+    token term:sym<value> { <value> }
 
     token keyword {
         [ fuc | ton ]
@@ -68,6 +68,8 @@ grammar Perl7::Grammar is HLL::Grammar {
     token infix:sym<=> { <sym> <O(|%assignment,     :op<bind> )> }
 
 }
+
+Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
 
 grammar Perl7::Actions is HLL::Actions {
     method TOP($/) {
@@ -90,7 +92,7 @@ grammar Perl7::Actions is HLL::Actions {
     method statement:sym<fuc>($/) {
         my $install := $<fucbody>.ast;
         $*CUR_BLOCK[0].push(
-            QAST::OP.new(
+            QAST::Op.new(
                 :op<bind>,
                 QAST::Var.new(
                     :name($install.name), :scope<lexical>, :decl<var>
@@ -98,7 +100,7 @@ grammar Perl7::Actions is HLL::Actions {
                 $install,
             )
         );
-        make QAST::OP.new(:op<null>);
+        make QAST::Op.new(:op<null>);
     }
     method fucbody($/) {
         $*CUR_BLOCK.name(~$<ident>);
@@ -122,7 +124,7 @@ grammar Perl7::Actions is HLL::Actions {
         my $name := ~$<ident>;
         my %sym := $*CUR_BLOCK.symbol($name);
         if $*MAYBE_DECL && !%sym<declared> {
-            $*CUR_BLOCK.symbol($name, :declared);
+            $*CUR_BLOCK.symbol($name, :declared(1));
             make QAST::Var.new(:$name, :scope<lexical>, :decl<var>);
         } else {
             make QAST::Var.new(:$name, :scope<lexical> )
@@ -134,6 +136,21 @@ grammar Perl7::Actions is HLL::Actions {
 }
 
 grammar Perl7::Compiler is HLL::Compiler {
+    method eval($code, *@_args, *%adverbs) {
+        my $output := self.compile($code, :compunit_ok(1), |%adverbs);
+
+        if %adverbs<target> eq '' {
+            my $outer_ctx := %adverbs<outer_ctx>;
+            $output := self.backend.compunit_mainline($output);
+            if nqp::defined($outer_ctx) {
+                nqp::forceouterctx($output, $outer_ctx);
+            }
+
+            $output := $output();
+        }
+
+        $output;
+    }
 }
 
 sub MAIN (*@ARGS) {
