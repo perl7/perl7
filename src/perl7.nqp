@@ -4,7 +4,11 @@ use NQPHLL;
 
 grammar Perl7::Grammar is HLL::Grammar {
     token TOP {
-        :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
+        :my $*CUR_BLOCK := QAST::Block.new(
+            QAST::Stmts.new(
+                QAST::Var.new(:name<@*ARGS>, :scope<lexical>, :decl<param>)
+            )
+        );
         <statementlist>
         [ $ || <.panic('Syntax error')> ]
     }
@@ -39,6 +43,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     token term:sym<value> { <value> }
     token term:sym<ident> {
         :my $*MAYBE_DECL := 0;
+        <!keyword>
         <ident>
         [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
     }
@@ -66,8 +71,6 @@ grammar Perl7::Grammar is HLL::Grammar {
 
 grammar Perl7::Actions is HLL::Actions {
     method TOP($/) {
-        $*CUR_BLOCK[0].push:
-            QAST::Var.new(:name<@*ARGS>, :scope<local>, :decl<param>);
         $*CUR_BLOCK.push: $<statementlist>.ast;
         make $*CUR_BLOCK;
     }
