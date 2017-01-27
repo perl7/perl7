@@ -44,7 +44,7 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     token term:sym<call> {
         <!keyword>
-        <identifier> <?{ $*CUR_BLOCK.symbol("&$<identifier>")<declared> }>
+        <identifier> <?{ $*CUR_BLOCK.symbol("ƒ$<identifier>")<declared> }>
         [ '[' :s <EXPR>* % [ ',' ] ']' ]?
     }
     token term:sym<identifier> {
@@ -106,7 +106,7 @@ grammar Perl7::Actions is HLL::Actions {
         make QAST::Op.new(:op<null>);
     }
     method funbody($/) {
-        $*CUR_BLOCK.name("&$<identifier>");
+        $*CUR_BLOCK.name("ƒ$<identifier>");
         $*CUR_BLOCK.push($<statementlist>.ast);
         make $*CUR_BLOCK;
     }
@@ -139,7 +139,7 @@ grammar Perl7::Actions is HLL::Actions {
         }
     }
     method term:sym<call>($/) {
-        my $call := QAST::Op.new: :op<call>, :name("&$<identifier>");
+        my $call := QAST::Op.new: :op<call>, :name("ƒ$<identifier>");
         for $<EXPR> {
             $call.push: $_.ast;
         }
