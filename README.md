@@ -51,6 +51,12 @@ fuc greet
 ton
 ```
 
+To call the function later, simply write its name:
+
+```
+greet  # prints "hi"
+```
+
 ### LICENSE
 
 See [LICENSE](LICENSE) file for details.

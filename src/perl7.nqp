@@ -14,20 +14,20 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     proto token statement {*}
     token statement:sym<EXPR> { <EXPR> }
-    token statement:sym<💬> {
-        <.ws> <sym> <.ws> <EXPR>
+    token statement:sym<💬> { # U+1F4AC
+        <sym> <.ws> <EXPR>
     }
     token statement:sym<fuc> {
         'fuc' \h+ <fucbody>
     }
     rule fucbody {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
-            <ident> <signature>? \n
-            <statementlist>
+        <ident> <signature>? \n
+        <statementlist>
         'ton'
     }
     rule signature {
-        '(' <param>* % [ ',' ] ')'
+        '[' <param>* % [ ',' ] ']'
     }
     token param { <ident> }
 
@@ -40,15 +40,15 @@ grammar Perl7::Grammar is HLL::Grammar {
     token value:sym<integer> { <sign> $<num>=\d+ }
     token value:sym<float>   { <sign> $<num>=[\d+ '.' \d+] }
 
+    token term:sym<call> {
+        <!keyword>
+        <ident> <?{ $*CUR_BLOCK.symbol("&$<ident>")<declared> }>
+    }
     token term:sym<ident> {
         :my $*MAYBE_DECL := 0;
         <!keyword>
         <ident>
         [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
-    }
-    token term:sym<call> {
-        <!keyword>
-        <ident> '(' ')'
     }
     token term:sym<value> { <value> }
 
@@ -69,8 +69,7 @@ grammar Perl7::Grammar is HLL::Grammar {
 
 }
 
-Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
-
+# Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
 grammar Perl7::Actions is HLL::Actions {
     method TOP($/) {
         $*CUR_BLOCK.push: $<statementlist>.ast;
@@ -91,6 +90,7 @@ grammar Perl7::Actions is HLL::Actions {
     }
     method statement:sym<fuc>($/) {
         my $install := $<fucbody>.ast;
+        $*CUR_BLOCK.symbol($install.name, :declared);
         $*CUR_BLOCK[0].push(
             QAST::Op.new(
                 :op<bind>,
@@ -103,7 +103,7 @@ grammar Perl7::Actions is HLL::Actions {
         make QAST::Op.new(:op<null>);
     }
     method fucbody($/) {
-        $*CUR_BLOCK.name(~$<ident>);
+        $*CUR_BLOCK.name("&$<ident>");
         $*CUR_BLOCK.push($<statementlist>.ast);
         make $*CUR_BLOCK;
     }
@@ -124,14 +124,14 @@ grammar Perl7::Actions is HLL::Actions {
         my $name := ~$<ident>;
         my %sym := $*CUR_BLOCK.symbol($name);
         if $*MAYBE_DECL && !%sym<declared> {
-            $*CUR_BLOCK.symbol($name, :declared(1));
+            $*CUR_BLOCK.symbol($name, :declared);
             make QAST::Var.new(:$name, :scope<lexical>, :decl<var>);
         } else {
             make QAST::Var.new(:$name, :scope<lexical> )
         }
     }
     method term:sym<call>($/) {
-        make QAST::Op.new( :op<call>, :name(~$<ident>) );
+        make QAST::Op.new( :op<call>, :name("&$<ident>") );
     }
 }
 
