@@ -6,7 +6,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     token TOP {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
         <statementlist>
-        [ $ || <.panic('Syntax error')> ]
+        [ $ || <.panic('Perl 7 syntax error')> ]
     }
     token ws { <!ww> \h* || \h+ }
 
@@ -33,6 +33,12 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
     token param { <identifier> }
 
+    rule statement:sym<if> {
+          'if' <statement> \n <statementlist>
+        [ 'else' \n <else=.statementlist> ]?
+        'end'
+    }
+
     proto token sign {*}
     token sign:sym<−> { '−'  }
     token sign:sym<+> { '+'? }
@@ -56,7 +62,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     token term:sym<value> { <value> }
 
     token keyword {
-        [ 'fun' | 'ion' ]
+        [ fun | ion | if | else | end ]
         <!ww>
     }
 
@@ -120,6 +126,23 @@ grammar Perl7::Actions is HLL::Actions {
         $*CUR_BLOCK[0].push:
             QAST::Var.new: :name(~$<identifier>), :scope<lexical>, :decl<param>;
         $*CUR_BLOCK.symbol: ~$<identifier>, :declared;
+    }
+
+    method statement:sym<if>($/) {
+        if $<else> {
+            make QAST::Op.new(
+                :op<if>,
+                $<statement>.ast,
+                $<statementlist>.ast,
+                $<else>.ast,
+            );
+        } else {
+            make QAST::Op.new(
+                :op<if>,
+                $<statement>.ast,
+                $<statementlist>.ast,
+            );
+        }
     }
 
     method sign:sym<−>($/) { make '-' }

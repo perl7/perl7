@@ -25,6 +25,22 @@ need any declarators and are simply declared on first use:
     💬 a × b × b # 4233.6
 ```
 
+## CONDITIONALS
+
+```
+if 42
+    💬 "foo"
+end
+```
+
+```
+if "meow"
+    💬 "foo"
+else
+    💬 "bar"
+end
+```
+
 ## OPERATORS
 
 **Note:** Perl 7 fully embraces the entire Unicode range and so traditional
