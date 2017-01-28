@@ -27,17 +27,31 @@ need any declarators and are simply declared on first use:
 
 ## CONDITIONALS
 
+### `if`
+
 ```
 if 42
     💬 "foo"
 end
 ```
 
+### `if`/`else`
+
 ```
 if "meow"
     💬 "foo"
 else
     💬 "bar"
+end
+```
+
+### `while`
+
+```
+a ≔ 10
+while a > 0
+    a ≔ a − 1
+    💬 a
 end
 ```
 

@@ -39,6 +39,11 @@ grammar Perl7::Grammar is HLL::Grammar {
         'end'
     }
 
+    rule statement:sym<while> {
+        'while' <statement> \n <statementlist>
+        'end'
+    }
+
     proto token sign {*}
     token sign:sym<−> { '−'  }
     token sign:sym<+> { '+'? }
@@ -62,7 +67,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     token term:sym<value> { <value> }
 
     token keyword {
-        [ fun | ion | if | else | end ]
+        [ fun | ion | if | else | end | while ]
         <!ww>
     }
 
@@ -143,6 +148,14 @@ grammar Perl7::Actions is HLL::Actions {
                 $<statementlist>.ast,
             );
         }
+    }
+
+    method statement:sym<while>($/) {
+        make QAST::Op.new(
+            :op<while>,
+            $<statement>.ast,
+            $<statementlist>.ast,
+        );
     }
 
     method sign:sym<−>($/) { make '-' }
