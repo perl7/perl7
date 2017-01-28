@@ -149,7 +149,7 @@ grammar Perl7::Actions is HLL::Actions {
 
 grammar Perl7::Compiler is HLL::Compiler {
     method eval($code, *@_args, *%adverbs) {
-        my $output := self.compile($code, :compunit_ok(1), |%adverbs);
+        my $output := self.compile($code, :compunit_ok, |%adverbs);
 
         if %adverbs<target> eq '' {
             my $outer_ctx := %adverbs<outer_ctx>;
