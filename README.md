@@ -18,10 +18,10 @@ Unlike previous Perls, Perl 7 no longer has sigils on variables nor do they
 need any declarators and are simply declared on first use:
 
 ```
-    a = 2.4
-    b = −2.5
+    a ≔ 2.4
+    b ≔ −2.5
     💬 a × b × b # 15
-    b = 42
+    b ≔ 42
     💬 a × b × b # 4233.6
 ```
 
@@ -33,10 +33,17 @@ no longer valid.
 
 The currently supported operators are:
 
+- `≔` `U+2254` assignment operator
 - `×` `U+00D7` Multiply
 - `÷` `U+00F7` Divide
 - `−` `U+2212` Subtract
 - `+` `U+002B` Add
+- `<` `U+003C` numerically less-than
+- `>` `U+003E` numerically more-than
+- `≤` `U+2264` numerically less-than or equal-to
+- `≥` `U+2265` numerically more-than or equal-to
+- `≠` `U+2260` numerically not equal to
+- `=` `U+003D` numerically equal to
 
 ## USER DECLARED FUNCTIONS
 

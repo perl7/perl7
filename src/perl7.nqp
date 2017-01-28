@@ -51,7 +51,7 @@ grammar Perl7::Grammar is HLL::Grammar {
         :my $*MAYBE_DECL := 0;
         <!keyword>
         <identifier>
-        [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
+        [ <?before \h* '≔' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
     }
     token term:sym<value> { <value> }
 
@@ -69,12 +69,13 @@ grammar Perl7::Grammar is HLL::Grammar {
     token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>  )> }
     token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>  )> }
     token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>  )> }
-    token infix:sym<=> { <sym> <O(|%assignment,     :op<bind>   )> }
+    token infix:sym<≔> { <sym> <O(|%assignment,     :op<bind>   )> }
     token infix:sym«<» { <sym> <O(|%chaining,       :op<islt_n> )> }
     token infix:sym«>» { <sym> <O(|%chaining,       :op<isgt_n> )> }
     token infix:sym«≤» { <sym> <O(|%chaining,       :op<isle_n> )> }
     token infix:sym«≥» { <sym> <O(|%chaining,       :op<isge_n> )> }
     token infix:sym«≠» { <sym> <O(|%chaining,       :op<isne_n> )> }
+    token infix:sym«=» { <sym> <O(|%chaining,       :op<iseq_n> )> }
 }
 
 # Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
