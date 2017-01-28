@@ -63,13 +63,18 @@ grammar Perl7::Grammar is HLL::Grammar {
     my %multiplicative := nqp::hash('prec', 'u=', 'assoc', 'left' );
     my %additive       := nqp::hash('prec', 't=', 'assoc', 'left' );
     my %assignment     := nqp::hash('prec', 'j=', 'assoc', 'right');
+    my %chaining       := nqp::hash('prec', 'm=', 'assoc', 'left' );
 
-    token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>)> }
-    token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>)> }
-    token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>)> }
-    token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>)> }
-    token infix:sym<=> { <sym> <O(|%assignment,     :op<bind> )> }
-
+    token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>  )> }
+    token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>  )> }
+    token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>  )> }
+    token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>  )> }
+    token infix:sym<=> { <sym> <O(|%assignment,     :op<bind>   )> }
+    token infix:sym«<» { <sym> <O(|%chaining,       :op<islt_n> )> }
+    token infix:sym«>» { <sym> <O(|%chaining,       :op<isgt_n> )> }
+    token infix:sym«≤» { <sym> <O(|%chaining,       :op<isle_n> )> }
+    token infix:sym«≥» { <sym> <O(|%chaining,       :op<isge_n> )> }
+    token infix:sym«≠» { <sym> <O(|%chaining,       :op<isne_n> )> }
 }
 
 # Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
