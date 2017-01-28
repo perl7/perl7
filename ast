@@ -1,0 +1,2 @@
+#!/bin/bash
+./perl7 --target=ast test.p7
