@@ -1,7 +1,11 @@
 class Foo
-    fun foo[a]
-        💬 a
-    ion
+    routine foo(a)
+        say 42
+        self
+    end
+    routine bar(a)
+        say a
+    end
 end
-a ≔ Foo.new
-a.foo[42]
+a = Foo.new
+a.foo(42).bar(72)

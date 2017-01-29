@@ -4,10 +4,10 @@
 
 ## FUNCTIONS
 
-### `💬` `U+1F4AC`
+### `say`
 
 ```
-    💬 'Hello, World!'
+    say 'Hello, World!'
 ```
 
 Prints text to STDOUT adding a newline at the end.
@@ -18,11 +18,11 @@ Unlike previous Perls, Perl 7 no longer has sigils on variables nor do they
 need any declarators and are simply declared on first use:
 
 ```
-    a ≔ 2.4
-    b ≔ −2.5
-    💬 a × b × b # 15
-    b ≔ 42
-    💬 a × b × b # 4233.6
+    a = 2.4
+    b = -2.5
+    say a * b * b # 15
+    b = 42
+    say a * b * b # 4233.6
 ```
 
 ## CONDITIONALS
@@ -31,7 +31,7 @@ need any declarators and are simply declared on first use:
 
 ```
 if 42
-    💬 "foo"
+    say "foo"
 end
 ```
 
@@ -39,53 +39,46 @@ end
 
 ```
 if "meow"
-    💬 "foo"
+    say "foo"
 else
-    💬 "bar"
+    say "bar"
 end
 ```
 
 ### `while`
 
 ```
-a ≔ 10
+a = 10
 while a > 0
-    a ≔ a − 1
-    💬 a
+    a = a - 1
+    say a
 end
 ```
 
 ## OPERATORS
 
-**Note:** Perl 7 fully embraces the entire Unicode range and so traditional
-symbols that are mis-used in other languages (e.g. `*` for multiplication) are
-no longer valid.
-
 The currently supported operators are:
 
-- `≔` `U+2254` assignment operator
-- `×` `U+00D7` Multiply
-- `÷` `U+00F7` Divide
-- `−` `U+2212` Subtract
-- `+` `U+002B` Add
-- `<` `U+003C` numerically less-than
-- `>` `U+003E` numerically more-than
-- `≤` `U+2264` numerically less-than or equal-to
-- `≥` `U+2265` numerically more-than or equal-to
-- `≠` `U+2260` numerically not equal to
-- `=` `U+003D` numerically equal to
+- `=` assignment operator
+- `*` Multiply
+- `/` Divide
+- `-` Subtract
+- `+` Add
+- `<` numerically less-than
+- `>` numerically more-than
+- `<=` numerically less-than or equal-to
+- `>=` numerically more-than or equal-to
+- `!=` numerically not equal to
+- `==` numerically equal to
 
 ## USER DECLARED FUNCTIONS
 
-Functions in Perl 7 are trivial to declare and need no ugly braces or anything
-like that. They're started with word `fun` followed by
-space and the function's name, followed by function's body, followed by word
-`ion`. Mnemonic: **fun**ct**ion**
+Both methods and functions are declared with keyword `routine`
 
 ```
-fun greet
-    💬 hi
-ion
+routine greet
+    say "hi"
+end
 ```
 
 To call the function later, simply write its name:
@@ -97,10 +90,26 @@ greet  # prints "hi"
 You can specify parameters with square brackets:
 
 ```
-fun calc-it[a, b, c]
-    💬 a + b + c
-ion
-calc-it[10, 20, 12] # prints 42
+routine calc-it(a, b, c)
+    say a + b + c
+end
+calc-it(10, 20, 12) # prints 42
+```
+
+## Object Orientation
+
+Classes are declared with a `class` keyword followed by a class name. `.new`
+method call creates a new object and `.foo` or `.foo(some, args)` is a method
+call.
+
+```
+class Foo
+    routine foo(a)
+        say a
+    end
+end
+a = Foo.new
+a.foo(42)
 ```
 
 ### LICENSE

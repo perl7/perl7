@@ -31,20 +31,20 @@ grammar Perl7::Grammar is HLL::Grammar {
 
     proto token statement {*}
     token statement:sym<EXPR> { <EXPR> }
-    token statement:sym<💬> { # U+1F4AC
+    token statement:sym<say> {
         <sym> <.ws> <EXPR>
     }
-    token statement:sym<fun> {
-        'fun' \h+ <funbody>
+    token statement:sym<routine> {
+        'routine' \h+ <routinebody>
     }
-    rule funbody {
+    rule routinebody {
         :my $*CUR_BLOCK := QAST::Block.new: QAST::Stmts.new;
         <identifier> <signature>? \n
         <statementlist>
-        'ion'
+        'end'
     }
     rule signature {
-        '[' <param>* % [ ',' ] ']'
+        '(' <param>* % [ ',' ] ')'
     }
     token param { <identifier> }
 
@@ -67,25 +67,21 @@ grammar Perl7::Grammar is HLL::Grammar {
         <ident> \n <statementlist> 'end'
     }
 
-    proto token sign {*}
-    token sign:sym<−> { '−'  }
-    token sign:sym<+> { '+'? }
-
     proto token value {*}
     token value:sym<string> { <?["']> <quote_EXPR: ':q'> }
-    token value:sym<integer> { <sign> $<num>=\d+ }
-    token value:sym<float>   { <sign> $<num>=[\d+ '.' \d+] }
+    token value:sym<integer> { <[+-]>? \d+ }
+    token value:sym<float>   { <[+-]>? \d+ '.' \d+ }
 
     token term:sym<call> {
         <!keyword>
-        <identifier> <?{ $*CUR_BLOCK.symbol("ƒ$<identifier>")<declared> }>
-        [ '[' :s <EXPR>* % [ ',' ] ']' ]?
+        <identifier> <?{ $*CUR_BLOCK.symbol("&$<identifier>")<declared> }>
+        [ '(' :s <EXPR>* % [ ',' ] ')' ]?
     }
     token term:sym<identifier> {
         :my $*MAYBE_DECL := 0;
         <!keyword>
         <identifier>
-        [ <?before \h* '≔' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
+        [ <?before \h* '=' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
     }
     token term:sym<value> { <value> }
     token term:sym<new> {
@@ -93,7 +89,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
 
     token keyword {
-        [ fun | ion | if | else | end | while | class ]
+        [ routine | if | else | end | while | class | say ]
         <!ww>
     }
 
@@ -103,21 +99,21 @@ grammar Perl7::Grammar is HLL::Grammar {
     my %chaining       := nqp::hash('prec', 'm=', 'assoc', 'left' );
     my %methodop       := nqp::hash('prec', 'y=', 'assoc', 'unary');
 
-    token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>  )> }
-    token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>  )> }
-    token infix:sym<+> { <sym> <O(|%additive,       :op<add_n>  )> }
-    token infix:sym<−> { <sym> <O(|%additive,       :op<sub_n>  )> }
-    token infix:sym<≔> { <sym> <O(|%assignment,     :op<bind>   )> }
-    token infix:sym«<» { <sym> <O(|%chaining,       :op<islt_n> )> }
-    token infix:sym«>» { <sym> <O(|%chaining,       :op<isgt_n> )> }
-    token infix:sym«≤» { <sym> <O(|%chaining,       :op<isle_n> )> }
-    token infix:sym«≥» { <sym> <O(|%chaining,       :op<isge_n> )> }
-    token infix:sym«≠» { <sym> <O(|%chaining,       :op<isne_n> )> }
-    token infix:sym«=» { <sym> <O(|%chaining,       :op<iseq_n> )> }
+    token infix:sym<*>  { <sym> <O(|%multiplicative, :op<mul_n>  )> }
+    token infix:sym</>  { <sym> <O(|%multiplicative, :op<div_n>  )> }
+    token infix:sym<+>  { <sym> <O(|%additive,       :op<add_n>  )> }
+    token infix:sym<->  { <sym> <O(|%additive,       :op<sub_n>  )> }
+    token infix:sym<=>  { <sym> <O(|%assignment,     :op<bind>   )> }
+    token infix:sym«<»  { <sym> <O(|%chaining,       :op<islt_n> )> }
+    token infix:sym«>»  { <sym> <O(|%chaining,       :op<isgt_n> )> }
+    token infix:sym«<=» { <sym> <O(|%chaining,       :op<isle_n> )> }
+    token infix:sym«>=» { <sym> <O(|%chaining,       :op<isge_n> )> }
+    token infix:sym«!=» { <sym> <O(|%chaining,       :op<isne_n> )> }
+    token infix:sym«==» { <sym> <O(|%chaining,       :op<iseq_n> )> }
 
     token postfix:sym<.> {
         <sym> <ident>
-        [ '[' :s <EXPR>* % [ ',' ] ']' ]?
+        [ '(' :s <EXPR>* % [ ',' ] ')' ]?
         <O(|%methodop)>
     }
 }
@@ -138,11 +134,11 @@ grammar Perl7::Actions is HLL::Actions {
     }
 
     method statement:sym<EXPR>($/) { make $<EXPR>.ast; }
-    method statement:sym<💬>($/) {
+    method statement:sym<say>($/) {
         make QAST::Op.new( :op('say'), $<EXPR>.ast );
     }
-    method statement:sym<fun>($/) {
-        my $install := $<funbody>.ast;
+    method statement:sym<routine>($/) {
+        my $install := $<routinebody>.ast;
         $*CUR_BLOCK.symbol($install.name, :declared);
         $*CUR_BLOCK[0].push(
             QAST::Op.new(
@@ -156,13 +152,13 @@ grammar Perl7::Actions is HLL::Actions {
         @*METHODS.push: $install if $*IN_CLASS;
         make QAST::Op.new(:op<null>);
     }
-        method funbody($/) {
+        method routinebody($/) {
             if $*IN_CLASS {
                 $*CUR_BLOCK[0].unshift:
                     QAST::Var.new: :name<self>, :scope<lexical>, :decl<param>;
             }
 
-            $*CUR_BLOCK.name("ƒ$<identifier>");
+            $*CUR_BLOCK.name("&$<identifier>");
             $*CUR_BLOCK.push($<statementlist>.ast);
             make $*CUR_BLOCK;
         }
@@ -229,15 +225,13 @@ grammar Perl7::Actions is HLL::Actions {
             make $*CUR_BLOCK;
         }
 
-    method sign:sym<−>($/) { make '-' }
-    method sign:sym<+>($/) { make ''  }
 
     method value:sym<string>($/) { make $<quote_EXPR>.ast; }
     method value:sym<integer>($/) {
-        make QAST::IVal.new: value => +($<sign>.made ~ $<num>);
+        make QAST::IVal.new: value => +$/;
     }
     method value:sym<float>($/) {
-        make QAST::NVal.new: value => +($<sign>.made ~ $<num>);
+        make QAST::NVal.new: value => +$/;
     }
 
     method term:sym<value>($/) { make $<value>.ast; }
@@ -252,7 +246,7 @@ grammar Perl7::Actions is HLL::Actions {
         }
     }
     method term:sym<call>($/) {
-        my $call := QAST::Op.new: :op<call>, :name("ƒ$<identifier>");
+        my $call := QAST::Op.new: :op<call>, :name("&$<identifier>");
         for $<EXPR> {
             $call.push: $_.ast;
         }
