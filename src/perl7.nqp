@@ -2,6 +2,21 @@
 
 use NQPHLL;
 
+class Perl7::ClassHOW {
+    has $!name;
+    has %!methods;
+
+    method new_type(:$name!) {
+        nqp::newtype(self.new(:$name), 'HashAttrStore');
+    }
+    method add_method($obj, $name, $code) {
+        %!methods{$name} := $code;
+    }
+    method find_method($obj, $name) {
+        %!methods{$name}
+    }
+}
+
 grammar Perl7::Grammar is HLL::Grammar {
     token TOP {
         :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
@@ -23,7 +38,7 @@ grammar Perl7::Grammar is HLL::Grammar {
         'fun' \h+ <funbody>
     }
     rule funbody {
-        :my $*CUR_BLOCK := QAST::Block.new(QAST::Stmts.new());
+        :my $*CUR_BLOCK := QAST::Block.new: QAST::Stmts.new;
         <identifier> <signature>? \n
         <statementlist>
         'ion'
@@ -38,10 +53,18 @@ grammar Perl7::Grammar is HLL::Grammar {
         [ 'else' \n <else=.statementlist> ]?
         'end'
     }
-
     rule statement:sym<while> {
         'while' <statement> \n <statementlist>
         'end'
+    }
+    token statement:sym<class> {
+        :my $*IN_CLASS := 1;
+        :my @*METHODS;
+        'class' \h+ <classbody>
+    }
+    rule classbody {
+        :my $*CUR_BLOCK := QAST::Block.new: QAST::Stmts.new;
+        <ident> \n <statementlist> 'end'
     }
 
     proto token sign {*}
@@ -65,9 +88,12 @@ grammar Perl7::Grammar is HLL::Grammar {
         [ <?before \h* '≔' [\w|\h+] { $*MAYBE_DECL := 1 }> || <?> ]
     }
     token term:sym<value> { <value> }
+    token term:sym<new> {
+        <ident> <.ws> '.new'
+    }
 
     token keyword {
-        [ fun | ion | if | else | end | while ]
+        [ fun | ion | if | else | end | while | class ]
         <!ww>
     }
 
@@ -75,6 +101,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     my %additive       := nqp::hash('prec', 't=', 'assoc', 'left' );
     my %assignment     := nqp::hash('prec', 'j=', 'assoc', 'right');
     my %chaining       := nqp::hash('prec', 'm=', 'assoc', 'left' );
+    my %methodop       := nqp::hash('prec', 'y=', 'assoc', 'unary');
 
     token infix:sym<×> { <sym> <O(|%multiplicative, :op<mul_n>  )> }
     token infix:sym<÷> { <sym> <O(|%multiplicative, :op<div_n>  )> }
@@ -87,6 +114,12 @@ grammar Perl7::Grammar is HLL::Grammar {
     token infix:sym«≥» { <sym> <O(|%chaining,       :op<isge_n> )> }
     token infix:sym«≠» { <sym> <O(|%chaining,       :op<isne_n> )> }
     token infix:sym«=» { <sym> <O(|%chaining,       :op<iseq_n> )> }
+
+    token postfix:sym<.> {
+        <sym> <ident>
+        [ '[' :s <EXPR>* % [ ',' ] ']' ]?
+        <O(|%methodop)>
+    }
 }
 
 # Perl7::Grammar.HOW.trace-on(Perl7::Grammar);
@@ -120,18 +153,25 @@ grammar Perl7::Actions is HLL::Actions {
                 $install,
             )
         );
+        @*METHODS.push: $install if $*IN_CLASS;
         make QAST::Op.new(:op<null>);
     }
-    method funbody($/) {
-        $*CUR_BLOCK.name("ƒ$<identifier>");
-        $*CUR_BLOCK.push($<statementlist>.ast);
-        make $*CUR_BLOCK;
-    }
-    method param($/) {
-        $*CUR_BLOCK[0].push:
-            QAST::Var.new: :name(~$<identifier>), :scope<lexical>, :decl<param>;
-        $*CUR_BLOCK.symbol: ~$<identifier>, :declared;
-    }
+        method funbody($/) {
+            if $*IN_CLASS {
+                $*CUR_BLOCK[0].unshift:
+                    QAST::Var.new: :name<self>, :scope<lexical>, :decl<param>;
+            }
+
+            $*CUR_BLOCK.name("ƒ$<identifier>");
+            $*CUR_BLOCK.push($<statementlist>.ast);
+            make $*CUR_BLOCK;
+        }
+        method param($/) {
+            $*CUR_BLOCK[0].push:
+                QAST::Var.new: :name(~$<identifier>),
+                    :scope<lexical>, :decl<param>;
+            $*CUR_BLOCK.symbol: ~$<identifier>, :declared;
+        }
 
     method statement:sym<if>($/) {
         if $<else> {
@@ -149,7 +189,6 @@ grammar Perl7::Actions is HLL::Actions {
             );
         }
     }
-
     method statement:sym<while>($/) {
         make QAST::Op.new(
             :op<while>,
@@ -157,6 +196,38 @@ grammar Perl7::Actions is HLL::Actions {
             $<statementlist>.ast,
         );
     }
+    method statement:sym<class>($/) {
+        my $body-block  := $<classbody>.ast;
+        my $class-stmts := QAST::Stmts.new: $body-block;
+        my $name        := $<classbody><ident>;
+        $class-stmts.push: QAST::Op.new(
+            :op<bind>,
+            QAST::Var.new(:name('::' ~ $name), :scope<lexical>, :decl<var>),
+            QAST::Op.new(
+                :op<callmethod>, :name<new_type>,
+                QAST::WVal.new(:value(Perl7::ClassHOW)),
+                QAST::SVal.new(:value($name), :named<name>),
+            )
+        );
+
+        my $class-var := QAST::Var.new: :name('::' ~ $name), :scope<lexical>;
+        for @*METHODS {
+            $class-stmts.push: QAST::Op.new(
+                :op<callmethod>, :name<add_method>,
+                QAST::Op.new(:op<how>, $class-var),
+                $class-var,
+                QAST::SVal.new(:value(nqp::substr($_.name,1))),
+                QAST::BVal.new(:value($_)),
+            );
+        }
+
+        make $class-stmts;
+    }
+        method classbody($/) {
+            $*CUR_BLOCK.push: $<statementlist>.ast;
+            $*CUR_BLOCK.blocktype: 'immediate';
+            make $*CUR_BLOCK;
+        }
 
     method sign:sym<−>($/) { make '-' }
     method sign:sym<+>($/) { make ''  }
@@ -182,6 +253,17 @@ grammar Perl7::Actions is HLL::Actions {
     }
     method term:sym<call>($/) {
         my $call := QAST::Op.new: :op<call>, :name("ƒ$<identifier>");
+        for $<EXPR> {
+            $call.push: $_.ast;
+        }
+        make $call;
+    }
+    method term:sym<new>($/) {
+        make QAST::Op.new: :op<create>,
+            QAST::Var.new: :name('::' ~ $<ident>), :scope<lexical>;
+    }
+    method postfix:sym<.>($/) {
+        my $call := QAST::Op.new: :op<callmethod>, :name(~$<ident>);
         for $<EXPR> {
             $call.push: $_.ast;
         }

@@ -1,6 +1,7 @@
-a ≔ 10
-while a > 0
-    a ≔ a − 1
-    💬 a
+class Foo
+    fun foo[a]
+        💬 a
+    ion
 end
-💬 a
+a ≔ Foo.new
+a.foo[42]
