@@ -87,7 +87,7 @@ To call the function later, simply write its name:
 greet  # prints "hi"
 ```
 
-You can specify parameters with square brackets:
+You can specify parameters with parentheses:
 
 ```
 routine calc-it(a, b, c)
