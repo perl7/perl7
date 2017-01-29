@@ -1,11 +1,13 @@
 class Foo
     routine foo(a)
-        say 42
         self
     end
     routine bar(a)
-        say a
+        a + a
     end
 end
-a = Foo.new
-a.foo(42).bar(72)
+a = 42000
+while a
+    a = a - 1
+    Foo.new.foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).bar(72)
+end

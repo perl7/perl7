@@ -9,11 +9,16 @@ class Perl7::ClassHOW {
     method new_type(:$name!) {
         nqp::newtype(self.new(:$name), 'HashAttrStore');
     }
-    method add_method($obj, $name, $code) {
+    method add_method($o, $name, $code) {
         %!methods{$name} := $code;
     }
-    method find_method($obj, $name) {
+    method find_method($o, $name) {
         %!methods{$name}
+    }
+
+    method compose($o) {
+        nqp::setmethcache($o, %!methods);
+        nqp::setmethcacheauth($o, 1);
     }
 }
 
@@ -216,6 +221,12 @@ grammar Perl7::Actions is HLL::Actions {
                 QAST::BVal.new(:value($_)),
             );
         }
+
+        $class-stmts.push: QAST::Op.new(
+            :op<callmethod>, :name<compose>,
+            QAST::Op.new(:op<how>, $class-var),
+            $class-var,
+        );
 
         make $class-stmts;
     }
