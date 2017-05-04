@@ -5,6 +5,10 @@ use NQPHLL;
 class Perl7::ClassHOW {
     has $!name;
     has %!methods;
+    has @!parents;
+
+    method parents      { @!parents }
+    method method_table { %!methods }
 
     method new_type(:$name!) {
         nqp::newtype(self.new(:$name), 'HashAttrStore');
@@ -13,7 +17,11 @@ class Perl7::ClassHOW {
         %!methods{$name} := $code;
     }
     method find_method($o, $name) {
-        %!methods{$name}
+        %!methods{$name} // @!parents[0].method_table{$name} // nqp::null();
+    }
+    method add_parent($o, $parent) {
+        die "Cannot have more than one parent" if @!parents;
+        @!parents.push: $parent;
     }
 
     method compose($o) {
@@ -65,7 +73,10 @@ grammar Perl7::Grammar is HLL::Grammar {
     token statement:sym<class> {
         :my $*IN_CLASS := 1;
         :my @*METHODS;
-        'class' \h+ <classbody>
+        'class' \h+ [<parent> \h+]? <classbody>
+    }
+    rule parent {
+        'is' <ident>
     }
     rule classbody {
         :my $*CUR_BLOCK := QAST::Block.new: QAST::Stmts.new;
@@ -94,7 +105,7 @@ grammar Perl7::Grammar is HLL::Grammar {
     }
 
     token keyword {
-        [ routine | if | else | end | while | class | say ]
+        [ routine | if | else | end | while | class | say | is ]
         <!ww>
     }
 
@@ -230,6 +241,9 @@ grammar Perl7::Actions is HLL::Actions {
 
         make $class-stmts;
     }
+        method parent($/) {
+            make QAST::Var.new: :name('::' ~ $<ident>), :scope<lexical>;
+        }
         method classbody($/) {
             $*CUR_BLOCK.push: $<statementlist>.ast;
             $*CUR_BLOCK.blocktype: 'immediate';

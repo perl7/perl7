@@ -1,5 +1,5 @@
 class Foo
-    routine foo(a)
+    routine foo($a)
         self
     end
     routine bar(a)
@@ -9,5 +9,7 @@ end
 a = 42000
 while a
     a = a - 1
-    Foo.new.foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).foo(a).bar(72)
+    Foo.new.foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).bar(72)
 end
+
+class Foo { method foo ($) { self }; method bar ($a) { $a + $a } }; my $a = 42000; while $a-- { Foo.new.foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).foo($a).bar(72) }; say now - INIT now;
